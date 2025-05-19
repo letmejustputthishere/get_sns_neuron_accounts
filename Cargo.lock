@@ -966,6 +966,7 @@ name = "get_sns_neuron_accounts"
 version = "0.1.0"
 dependencies = [
  "dfn_core",
+ "hex",
  "ic-agent",
  "ic-ledger-types",
  "ic-nervous-system-common",

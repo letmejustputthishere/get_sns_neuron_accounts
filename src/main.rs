@@ -1,3 +1,4 @@
+use hex::FromHex;
 use std::str::FromStr;
 
 use dfn_core::api::PrincipalId;
@@ -59,15 +60,27 @@ async fn main() {
     // let subaccount = compute_distribution_subaccount(sns_governance_canister_id, 0);
     // println!("SNS treasury subaccount: {}", subaccount);
 
+    let treasury_account = Account {
+        owner: sns_governance_principal,
+        subaccount: Some(subaccount),
+    };
+
     let balance = fuel_ledger
-        .balance_of(
-            Account {
-                owner: sns_governance_principal,
-                subaccount: Some(subaccount),
-            },
-            CallMode::Update,
-        )
+        .balance_of(treasury_account, CallMode::Update)
         .await
         .expect("Failed to get balance");
     println!("Treasury Fuel balance: {}", balance);
+
+    println!("{treasury_account}");
+
+    let neuron_account = Account {
+        owner: sns_governance_principal,
+        subaccount: Some(
+            <[u8; 32]>::from_hex(
+                "30b259a09af47f31b200c91be926eae52e33719a79ebc382bb4b5926bf662063",
+            )
+            .expect("Decoding failed"),
+        ),
+    };
+    println!("{}", neuron_account)
 }
