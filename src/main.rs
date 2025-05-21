@@ -15,13 +15,7 @@ async fn main() {
     let sns_governance_principal = Principal::from_str(prinicpal_string).unwrap();
 
     // initialize the agents
-    let icp_agent = Agent::builder()
-        .with_url("https://icp0.io")
-        .with_identity(AnonymousIdentity)
-        .build()
-        .expect("Failed to create agent");
-
-    let fuel_agent = Agent::builder()
+    let agent = Agent::builder()
         .with_url("https://icp0.io")
         .with_identity(AnonymousIdentity)
         .build()
@@ -29,15 +23,16 @@ async fn main() {
 
     // initialize the icrc agent
     let icp_ledger = Icrc1Agent {
-        agent: icp_agent,
+        agent: agent.clone(),
         ledger_canister_id: MAINNET_LEDGER_CANISTER_ID,
     };
 
     let fuel_ledger = Icrc1Agent {
-        agent: fuel_agent,
+        agent: agent,
         ledger_canister_id: Principal::from_str("nfjys-2iaaa-aaaaq-aaena-cai").unwrap(),
     };
 
+    // the icp of the treasury is held by the default account of the sns governance canister
     let balance = icp_ledger
         .balance_of(
             Account {
@@ -64,6 +59,7 @@ async fn main() {
         owner: sns_governance_principal,
         subaccount: Some(subaccount),
     };
+    println!("fuel token treasury account: {treasury_account}");
 
     let balance = fuel_ledger
         .balance_of(treasury_account, CallMode::Update)
@@ -71,8 +67,11 @@ async fn main() {
         .expect("Failed to get balance");
     println!("Treasury Fuel balance: {}", balance);
 
-    println!("{treasury_account}");
-
+    // the subaccount of the fuel governance canister on the fuel ledger belonging
+    // to a specific fuel neuron is equivalent to the neuron id.
+    // the below neuron id / subaccount was obtained by calling list_neurons on the governance
+    // canister with the below developer neuron principal as an arugment:
+    // 45uha-nnefe-yiih4-lcjg5-q3mm6-c2xsg-7xwxi-v37db-oliaz-qmovh-eqe
     let neuron_account = Account {
         owner: sns_governance_principal,
         subaccount: Some(
@@ -83,4 +82,12 @@ async fn main() {
         ),
     };
     println!("{}", neuron_account)
+    
+    // we can use list_community_fund_participants to validate the neuron fund participants
+    // https://dashboard.internetcomputer.org/canister/nci6g-xqaaa-aaaaq-aaenq-cai#list_community_fund_participants
+    // should be 64 participants contributing 8_816_968_789_320 ICP, as according to get_derived_state
+
+    // we can call list_direct_participants to validate direct participation
+    // https://dashboard.internetcomputer.org/canister/nci6g-xqaaa-aaaaq-aaenq-cai#list_direct_participants
+    // should be 372 participants contributing 20_539_941_559_379 ICP, according to get_derived_state
 }
